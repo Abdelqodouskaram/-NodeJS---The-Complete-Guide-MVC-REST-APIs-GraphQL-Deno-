@@ -1,3 +1,5 @@
+const products = [];
+
 exports.getAddProducts = (req, res, next) => {
   res.render("add-product", {
     pageTitle: "Add Product",
@@ -5,5 +7,21 @@ exports.getAddProducts = (req, res, next) => {
     formCss: true,
     productCss: true,
     productActive: true,
+  });
+};
+
+exports.postAddProducts = (req, res, next) => {
+  products.push({ title: req.body.title });
+  res.redirect("/");
+};
+
+exports.getProducts = (req, res, next) => {
+  res.render("shop", {
+    prods: products,
+    pageTitle: "Shop",
+    path: "/",
+    hasProducts: products.length > 0,
+    productCss: true,
+    shopActive: true,
   });
 };
