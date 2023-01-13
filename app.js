@@ -1,30 +1,24 @@
-const express = require("express");
-const path = require("path");
+const path = require('path');
+
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const errorController = require('./controllers/error');
 
 const app = express();
-const bodyParser = require("body-parser");
 
-const adminRoutes = require("./routes/admin");
-const shopRoutes = require("./routes/shop");
-const errorsController = require("./controllers/error");
-
-//set the default template engine as ejs
 app.set('view engine', 'ejs');
-
-//set the directory of the template views
 app.set('views', 'views');
 
-//used to parse the body of the request
-app.use(bodyParser.urlencoded({ extended: false }));
+const adminRoutes = require('./routes/admin');
+const shopRoutes = require('./routes/shop');
 
-//used to serve the static file within specific directory
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use("/admin", adminRoutes);
+app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 
-app.use(errorsController.get404);
+app.use(errorController.get404);
 
-app.listen(8080, () => {
-    console.log("Server is running on port 8080");
-});
+app.listen(8080);
