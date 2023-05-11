@@ -8,7 +8,7 @@
     "start": "nodemon app.js",
     "start-server": "node app.js"
   },
-  "author": "Maximilian Schwarzmüller",
+  "author": "Abdelqodous",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^18.11.18",
@@ -20,6 +20,7 @@
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "express-handlebars": "^3.0.0",
+    "mongodb": "^5.4.0",
     "mysql2": "^3.0.1",
     "pug": "^2.0.3",
     "sequelize": "^6.28.0"
