@@ -57,10 +57,6 @@ class Product {
       .find({ _id: new mongodb.ObjectId(id) })
       .next()
       .then((result) => {
-        console.log(
-          "🚀 ~ file: product.js:55 ~ Product ~ .then ~ result:",
-          result
-        );
         return result;
       })
       .catch((error) => {
