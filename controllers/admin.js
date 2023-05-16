@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const Product = require("../models/product");
 
 exports.getAddProduct = (req, res, next) => {
@@ -13,14 +14,13 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  const product = new Product(
-    title,
-    price,
-    description,
-    imageUrl,
-    null,
-    req.user._id
-  );
+  const product = new Product({
+    title: title,
+    imageUrl: imageUrl,
+    price: price,
+    description: description,
+    userId: req.user,
+  });
   product.save().then((result) => {
     res.redirect("/admin/products");
   });
@@ -51,31 +51,43 @@ exports.postEditProduct = (req, res, next) => {
   const updatedPrice = req.body.price;
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
-  let product = new Product(
-    updatedTitle,
-    updatedPrice,
-    updatedDesc,
-    updatedImageUrl,
-    prodId
-  );
-  product.save().then((product) => {
+  // let product = new Product(
+  //   updatedTitle,
+  //   updatedPrice,
+  //   updatedDesc,
+  //   updatedImageUrl,
+  //   prodId
+  // );
+  Product.findOneAndUpdate(
+    { _id: new ObjectId(prodId) },
+    {
+      $set: {
+        title: updatedTitle,
+        description: updatedDesc,
+        price: updatedPrice,
+        imageUrl: updatedImageUrl,
+      },
+    }
+  ).then((product) => {
     res.redirect("/admin/products");
   });
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll().then((products) => {
-    res.render("admin/products", {
-      prods: products,
-      pageTitle: "Admin Products",
-      path: "/admin/products",
+  Product.find()
+    .populate("userId", "name")
+    .then((products) => {
+      res.render("admin/products", {
+        prods: products,
+        pageTitle: "Admin Products",
+        path: "/admin/products",
+      });
     });
-  });
 };
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+  Product.findByIdAndDelete(prodId)
     .then(() => {
       res.redirect("/admin/products");
     })
