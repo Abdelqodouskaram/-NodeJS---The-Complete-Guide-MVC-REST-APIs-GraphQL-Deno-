@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const csrf = require("csurf");
+const flash = require('connect-flash');
 
 const MONGO_URI =
   "mongodb+srv://abdelqodous97:mCUQrEouRwwR4ncI@cluster0.kgylvfp.mongodb.net/shop?w=majority";
@@ -17,6 +19,7 @@ const store = new MongoDBStore({
   uri: MONGO_URI,
   collection: "sessions",
 });
+const csrfProtection = csrf();
 
 app.set("view engine", "ejs");
 app.set("views", "views");
@@ -37,17 +40,26 @@ app.use(
   })
 );
 
+app.use(csrfProtection);
+app.use(flash());
+
 app.use((req, res, next) => {
   if (!req.session.user) {
     return next();
   }
   User.findById(req.session.user._id)
-    .then(user => {
+    .then((user) => {
       req.user = user;
       next();
     })
     .catch((err) => console.log(err));
 });
+
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+})
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
@@ -61,18 +73,6 @@ mongoose
     useUnifiedTopology: true,
   })
   .then((result) => {
-    User.findOne().then((user) => {
-      if (!user) {
-        const user = new User({
-          name: "Abdelqodous",
-          email: "a.karam@intcore.com",
-          cart: {
-            items: [],
-          },
-        });
-        user.save();
-      }
-    });
     app.listen(8080);
   })
   .catch((err) => {
