@@ -15,9 +15,10 @@ const transporter = nodeMailer.createTransport(
 
 const User = require("../models/user");
 const user = require("../models/user");
+const { validationResult } = require("express-validator");
 
 exports.getLogin = (req, res, next) => {
-  let message = req.flash("error");
+  let message = req.flash("errorMessage");
   message = message.length ? message[0] : null;
   res.render("auth/login", {
     path: "/login",
@@ -26,25 +27,26 @@ exports.getLogin = (req, res, next) => {
   });
 };
 
-exports.getSignup = (req, res, next) => {
-  let message = req.flash("error");
-  message = message.length ? message[0] : null;
-  res.render("auth/signup", {
-    path: "/signup",
-    pageTitle: "Signup",
-    errorMessage: message,
-  });
-};
-
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const passowrd = req.body.password;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "login",
+      errorMessage: errors.array()[0].msg,
+    });
+  }
 
   User.findOne({ email: email })
     .then((user) => {
       if (!user) {
-        req.flash("error", "Invalid email or password!");
-        return res.redirect("/login");
+        return res.render("auth/login", {
+          path: "/login",
+          pageTitle: "Login",
+          errorMessage: message,
+        });
       }
       bcryptjs
         .compare(passowrd, user.password)
@@ -57,7 +59,7 @@ exports.postLogin = (req, res, next) => {
               res.redirect("/");
             });
           }
-          req.flash("error", "Invalid email or password!");
+          req.flash("errorMessage", "Invalid email or password!");
           res.redirect("/login");
         })
         .catch((error) => {
@@ -70,39 +72,60 @@ exports.postLogin = (req, res, next) => {
     .catch((err) => console.log(err));
 };
 
+exports.getSignup = (req, res, next) => {
+  let message = req.flash("errorMessage");
+  console.log("🚀 ~ file: auth.js:32 ~ message:", message);
+  message = message.length ? message[0] : null;
+  res.render("auth/signup", {
+    path: "/signup",
+    pageTitle: "Signup",
+    errorMessage: message,
+    oldInput: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationErrors: [],
+  });
+};
+
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const confirmPassword = req.body.confirmPassword;
-  User.findOne({ email: email })
-    .then((userData) => {
-      if (userData) {
-        req.flash("error", "Email already exists!");
-        return res.redirect("/signup");
-      }
-      bcryptjs.hash(password, 12).then((hashedPassword) => {
-        const user = new User({
-          email: email,
-          password: hashedPassword,
-        });
-        user.save().then((user) => {
-          res.redirect("/login");
-          return transporter
-            .sendMail({
-              to: email,
-              from: "abdelqodous.karam@intcore.com",
-              subject: "Signup Succeeded!",
-              html: "<h1>You successfully signed up!</h1>",
-            })
-            .catch((error) => {
-              console.log("🚀 ~ file: auth.js:94 ~ user.save ~ error:", error);
-            });
-        });
-      });
-    })
-    .catch((error) => {
-      console.log("🚀 ~ file: auth.js:50 ~ User.findOne ~ error:", error);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
+      },
+      validationErrors: errors.array(),
     });
+  }
+  bcryptjs.hash(password, 12).then((hashedPassword) => {
+    const user = new User({
+      email: email,
+      password: hashedPassword,
+    });
+    user.save().then((user) => {
+      res.redirect("/login");
+      return transporter
+        .sendMail({
+          to: email,
+          from: "abdelqodous.karam@intcore.com",
+          subject: "Signup Succeeded!",
+          html: "<h1>You successfully signed up!</h1>",
+        })
+        .catch((error) => {
+          console.log("🚀 ~ file: auth.js:94 ~ user.save ~ error:", error);
+        });
+    });
+  });
 };
 
 exports.postLogout = (req, res, next) => {
@@ -113,7 +136,7 @@ exports.postLogout = (req, res, next) => {
 };
 
 exports.getReset = (req, res, next) => {
-  let message = req.flash("error");
+  let message = req.flash("errorMessage");
   message = message.length ? message[0] : null;
   res.render("auth/reset", {
     path: "/reset",
@@ -132,7 +155,6 @@ exports.postReset = (req, res, next) => {
     User.findOne({ email: req.body.email })
       .then((user) => {
         if (!user) {
-          req.flash("error", "Account is not found!");
           return res.redirect("/reset");
         }
         user.resetToken = token;
@@ -162,7 +184,7 @@ exports.getNewPassword = (req, res, next) => {
       if (!user) {
         return res.redirect("/reset");
       }
-      let message = req.flash("error");
+      let message = req.flash("errorMessage");
       message = message.length ? message[0] : null;
       res.render("auth/new-password", {
         path: "/new-password",
